@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#0c111b"><title>ICT Checklist</title><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="ICT Checklist"><style>
+:root{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#edf3fa;background:#0c111b}*{box-sizing:border-box}body{margin:0;padding:20px 15px 35px;max-width:520px;margin-inline:auto}h1{font-size:23px;margin:5px 0}small,.sub{color:#97a5b8}.sub{font-size:13px;margin:3px 0 22px}.panel{border:1px solid #2b3547;border-radius:16px;background:#151d2a;padding:16px;margin:13px 0}.head{display:flex;align-items:center;justify-content:space-between;gap:12px}.head h2{font-size:15px;margin:0}.seg{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px}button{font:inherit;cursor:pointer;touch-action:manipulation}.seg button{border:1px solid #394456;color:#cbd6e5;background:#202b3b;border-radius:11px;padding:13px 3px;font-weight:650}.seg button.active.up{background:#124936;border-color:#34c88c;color:#b9f6d6}.seg button.active.down{background:#57232b;border-color:#ed6b79;color:#ffd0d5}.seg button.active.neutral{background:#364152;border-color:#a5b4c9;color:white}.item{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid #293447}.item:last-child{border:0}.item strong{display:block;font-size:15px}.item small{display:block;font-size:12px;margin-top:3px}.toggle{min-width:94px;border:1px solid #475268;border-radius:11px;background:#283347;color:#bfcada;padding:11px 9px;font-weight:700}.toggle.ok{background:#164c3a;color:#c3ffe0;border-color:#38bf86}.progress{height:9px;background:#303b4f;border-radius:30px;overflow:hidden;margin:14px 0 9px}.fill{height:100%;width:0;background:#32c18a;transition:width .15s}.status{font-size:13px;color:#c0cbd9}.foot{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:15px}.foot button{border-radius:12px;padding:15px 8px;font-weight:700}.reset{border:1px solid #42506a;background:#1e293b;color:#e1eaf6}.copy{border:0;background:#dce9fc;color:#15253c}.pill{font-size:12px;color:#93a6bd}.oktext{color:#71dfa9}.warning{color:#e9c17d}input{background:#202b3b;border:1px solid #3b4759;border-radius:10px;color:#fff;padding:11px;width:100%;font:inherit;margin-top:9px}label{font-size:13px;color:#bbc9d9}p.tip{font-size:12px;color:#9baac1;line-height:1.5;margin:17px 3px}
+</style></head><body>
+<h1>ESTRATEGIA</h1><p class="sub">ICT / SMC · checklist de confluencias</p>
+<div class="panel"><div class="head"><h2>1. Daily Bias</h2><span class="pill" id="directionLabel">Sin definir</span></div><div class="seg" id="biasBtns"><button data-bias="Alcista" class="up">↑ Alcista</button><button data-bias="Bajista" class="down">↓ Bajista</button><button data-bias="Neutral" class="neutral">— Neutral</button></div></div>
+<div class="panel"><div class="head"><h2>Confluencias</h2><span class="pill" id="count">0/6 etapas</span></div><div id="checks"></div><div class="progress"><div class="fill" id="bar"></div></div><div class="head"><span class="status" id="status">Por comprobar</span><strong id="percent">0%</strong></div></div>
+<div class="panel"><label for="note">Nota rápida (opcional)</label><input id="note" placeholder="Ej. NY AM · NQ · 5m" maxlength="160"><div class="foot"><button class="reset" id="reset">↻ Nueva operación</button><button class="copy" id="copy">Copiar resumen</button></div></div>
+<p class="tip">Todas las etapas son necesarias. La última se confirma con IFVG o CISD: una sola basta y marcar ambas no suma más. El progreso se guarda localmente en este dispositivo. El 100 % indica que tu checklist está completo, no garantiza una operación rentable.</p>
+<script>
+const names=[
+ ['2. Objetivos de liquidez DOL','DOL identificado'],
+ ['3. Reacción a POI (FVG, OB)','Reacción confirmada'],
+ ['4. Toma de liquidez o SMT','Sweep o divergencia SMT'],
+ ['5. Continuación','Continuación confirmada'],
+ ['6. IFVG','Confirmación alternativa A'],
+ ['7. CISD','Confirmación alternativa B']
+];
+const storageKey='ictChecklistStrategyV2';
+const defaultState=()=>({bias:'',checks:Array(names.length).fill(false),note:''});
+let state;
+try{state={...defaultState(),...JSON.parse(localStorage.getItem(storageKey)||'{}')}}catch{state=defaultState()}
+if(!Array.isArray(state.checks)||state.checks.length!==names.length)state.checks=Array(names.length).fill(false);
+const root=document.getElementById('checks');
+names.forEach(([name,hint],i)=>{const el=document.createElement('div');el.className='item';const detail=document.createElement('div'),strong=document.createElement('strong'),small=document.createElement('small');strong.textContent=name;small.textContent=hint;detail.append(strong,small);const btn=document.createElement('button');btn.className='toggle';btn.id='c'+i;btn.setAttribute('aria-label','Marcar '+name);btn.addEventListener('click',()=>{state.checks[i]=!state.checks[i];render()});el.append(detail,btn);root.append(el)});
+function progress(){return Number(['Alcista','Bajista'].includes(state.bias))+state.checks.slice(0,4).filter(Boolean).length+Number(state.checks[4]||state.checks[5])}
+function render(){
+ try{localStorage.setItem(storageKey,JSON.stringify(state))}catch{}
+ document.querySelectorAll('[data-bias]').forEach(b=>{b.classList.toggle('active',b.dataset.bias===state.bias);b.setAttribute('aria-pressed',String(b.dataset.bias===state.bias))});
+ document.getElementById('directionLabel').textContent=state.bias||'Sin definir';
+ state.checks.forEach((v,i)=>{const b=document.getElementById('c'+i);b.classList.toggle('ok',v);b.textContent=v?'✓ OK':'Pendiente';b.setAttribute('aria-pressed',String(v))});
+ const count=progress(),pct=Math.round(count/6*100),done=count===6;
+ document.getElementById('count').textContent=count+'/6 etapas';
+ document.getElementById('percent').textContent=pct+'%';
+ document.getElementById('bar').style.width=(count/6*100)+'%';
+ const status=document.getElementById('status');status.textContent=done?'Checklist completo · revisa el riesgo':count===5&&!state.checks[4]&&!state.checks[5]?'Falta IFVG o CISD':(6-count)+' etapa(s) pendiente(s)';status.className='status '+(done?'oktext':'warning');
+ document.getElementById('note').value=state.note||'';
+}
+document.querySelectorAll('[data-bias]').forEach(b=>b.addEventListener('click',()=>{state.bias=b.dataset.bias;render()}));
+document.getElementById('note').addEventListener('input',e=>{state.note=e.target.value;try{localStorage.setItem(storageKey,JSON.stringify(state))}catch{}});
+document.getElementById('reset').addEventListener('click',()=>{if(confirm('¿Iniciar una nueva operación y borrar las marcas actuales?')){state=defaultState();render()}});
+document.getElementById('copy').addEventListener('click',async()=>{const summary=`ESTRATEGIA ICT / SMC\nDaily Bias: ${state.bias||'Sin definir'}\n`+names.map(([n],i)=>`${state.checks[i]?'✓':'○'} ${n}`).join('\n')+`\nProgreso: ${Math.round(progress()/6*100)}%\nNota: ${state.note||'-'}`;try{await navigator.clipboard.writeText(summary);alert('Resumen copiado')}catch{prompt('Copia el resumen:',summary)}});
+render();
+if ('serviceWorker' in navigator && location.protocol === 'https:') {
+  window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));
+}
+</script></body></html>
